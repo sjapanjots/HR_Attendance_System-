@@ -50,6 +50,26 @@ def _preview(sheet: SheetData, rows: int = 15) -> pl.DataFrame:
     return pl.DataFrame(data, schema={"Row": pl.Int64, **{h: pl.String for h in sheet.headers}})
 
 
+PREVIEW_COLUMNS = {"Row", "Day", "Cell", "Shift", "In", "Out", "Worked", "Old", "New", "Note", "excel_row"}
+
+
+def _employee_details(sheet: SheetData, cols: list[int]) -> tuple[pl.DataFrame, list[str]]:
+    """Per-row values of the chosen employee columns (e.g. Emp Code, Employee Name), for display only."""
+    rows = sorted(sheet.cells)
+    data: dict[str, list] = {"excel_row": rows}
+    names: list[str] = []
+    for col in cols:
+        header = sheet.headers[col - 1]
+        name = header.split(": ", 1)[-1]
+        if name in PREVIEW_COLUMNS or name in data or name == "(blank header)":
+            name = header  # keep the column letter to stay unique
+        values = [sheet.value(r, col) for r in rows]
+        data[name] = [None if v is None else str(int(v) if isinstance(v, float) and v.is_integer() else v) for v in values]
+        names.append(name)
+    schema = {"excel_row": pl.Int64, **{n: pl.String for n in names}}
+    return pl.DataFrame(data, schema=schema), names
+
+
 def _reset_on_change(signature: tuple) -> None:
     if st.session_state.get("signature") != signature:
         st.session_state["signature"] = signature
@@ -309,10 +329,20 @@ def _run(progress: dict[str, int]) -> None:
             "For review": result.filter(pl.col("action") == ACTION_REVIEW),
             "All": result,
         }
+        detail_options = [h for i, h in enumerate(headers, start=1) if i not in block_cols and i != shift_col]
+        details = st.multiselect(
+            "Employee details to show",
+            detail_options,
+            key="detail_cols",
+            placeholder="e.g. B: Emp Code, C: Employee Name",
+            help="Display only: these columns are shown next to each row in the table below. The output workbook always keeps every column.",
+        )
         view = st.segmented_control("Show", list(views), default="Will change", label_visibility="collapsed") or "Will change"
+        detail_frame, detail_names = _employee_details(sheet, [headers.index(h) + 1 for h in details])
         st.dataframe(
-            views[view].select(
+            views[view].join(detail_frame, on="excel_row", how="left", maintain_order="left").select(
                 pl.col("excel_row").alias("Row"),
+                *[pl.col(name) for name in detail_names],
                 pl.col("day_label").alias("Day"),
                 pl.col("cell").alias("Cell"),
                 pl.col("shift_raw").alias("Shift"),
