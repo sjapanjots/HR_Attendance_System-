@@ -29,6 +29,31 @@ python -m pytest -q tests
 
 To also run the end-to-end test against a real month workbook, set `ATTENDANCE_SAMPLE=/path/to/workbook.xlsx`.
 
+## Deploy on Streamlit Community Cloud
+
+The repository is ready to deploy as is:
+
+| Requirement | Where |
+|---|---|
+| Entry point | `app.py` at the repository root |
+| Python dependencies (pinned, tested versions) | `requirements.txt` |
+| Theme, hidden toolbar, 50 MB upload limit | `.streamlit/config.toml` |
+| Styling | `assets/style.css` (read relative to `app.py`) |
+| Secrets / system packages | none needed (no `secrets.toml`, no `packages.txt`) |
+
+1. Merge this branch into `main`.
+2. Go to [share.streamlit.io](https://share.streamlit.io), sign in with GitHub and choose **Create app → Deploy a public app from GitHub**.
+3. Repository `sjapanjots/HR_Attendance_System-`, branch `main`, main file path `app.py`.
+4. Under **Advanced settings** choose **Python 3.12** (the version the tests run on).
+5. Choose an app URL and click **Deploy**. Each push to `main` redeploys the app automatically.
+
+**Privacy:** the workbooks contain employee data. Under the app's **Settings → Sharing**, make the app private and invite only
+the HR users who need it. Uploaded files are processed in memory only. They are never written to disk or kept after the
+session, apart from a short-lived (15 minute) in-memory cache of the parsed sheet.
+
+GitHub Actions (`.github/workflows/tests.yml`) runs the test suite on Python 3.12 for every pull request and push to `main`.
+It includes a smoke test that starts the Streamlit app headlessly.
+
 ## Interface
 
 A minimal, single-column layout: a progress stepper (Upload → Worksheet → Map columns → Thresholds → Preview → Export),
@@ -122,7 +147,8 @@ the punches. Choose the format the column uses: `12.13` in these workbooks means
 ```
 app.py                  Streamlit UI (workflow steps 1–6)
 assets/style.css        styling for the clean, minimal look
-.streamlit/config.toml  theme (colours, font) and hidden Streamlit toolbar
+.streamlit/config.toml  theme (colours, font), hidden Streamlit toolbar, upload limit
+.github/workflows/      CI: test suite on Python 3.12
 attendance/rules.py     thresholds, grace period and the Polars classification expression
 attendance/parsing.py   read-only parsing of punch times, worked hours and shift length
 attendance/layout.py    day-block mapping (repeat day 1 across the month) and header checks
