@@ -29,6 +29,13 @@ python -m pytest -q tests
 
 To also run the end-to-end test against a real month workbook, set `ATTENDANCE_SAMPLE=/path/to/workbook.xlsx`.
 
+## Interface
+
+A minimal, single-column layout: a progress stepper (Upload → Worksheet → Map columns → Thresholds → Preview → Export),
+one card per step, colour-coded attendance chips and summary tiles. The look comes from the theme in
+[`.streamlit/config.toml`](.streamlit/config.toml) (neutral palette, Inter font) and the stylesheet in
+[`assets/style.css`](assets/style.css); change colours or spacing there without touching the app logic.
+
 ## Workflow
 
 1. **Upload** an `.xlsx` workbook. The upload is never modified.
@@ -114,6 +121,8 @@ the punches. Choose the format the column uses: `12.13` in these workbooks means
 
 ```
 app.py                  Streamlit UI (workflow steps 1–6)
+assets/style.css        styling for the clean, minimal look
+.streamlit/config.toml  theme (colours, font) and hidden Streamlit toolbar
 attendance/rules.py     thresholds, grace period and the Polars classification expression
 attendance/parsing.py   read-only parsing of punch times, worked hours and shift length
 attendance/layout.py    day-block mapping (repeat day 1 across the month) and header checks
