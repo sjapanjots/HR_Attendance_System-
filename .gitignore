@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*_attendance_marked.xlsx
+.streamlit/secrets.toml
