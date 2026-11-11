@@ -50,6 +50,26 @@ def _preview(sheet: SheetData, rows: int = 15) -> pl.DataFrame:
     return pl.DataFrame(data, schema={"Row": pl.Int64, **{h: pl.String for h in sheet.headers}})
 
 
+PREVIEW_COLUMNS = {"Row", "Day", "Cell", "Shift", "In", "Out", "Worked", "Old", "New", "Note", "excel_row"}
+
+
+def _employee_details(sheet: SheetData, cols: list[int]) -> tuple[pl.DataFrame, list[str]]:
+    """Per-row values of the chosen employee columns (e.g. Emp Code, Employee Name), for display only."""
+    rows = sorted(sheet.cells)
+    data: dict[str, list] = {"excel_row": rows}
+    names: list[str] = []
+    for col in cols:
+        header = sheet.headers[col - 1]
+        name = header.split(": ", 1)[-1]
+        if name in PREVIEW_COLUMNS or name in data or name == "(blank header)":
+            name = header  # keep the column letter to stay unique
+        values = [sheet.value(r, col) for r in rows]
+        data[name] = [None if v is None else str(int(v) if isinstance(v, float) and v.is_integer() else v) for v in values]
+        names.append(name)
+    schema = {"excel_row": pl.Int64, **{n: pl.String for n in names}}
+    return pl.DataFrame(data, schema=schema), names
+
+
 def _reset_on_change(signature: tuple) -> None:
     if st.session_state.get("signature") != signature:
         st.session_state["signature"] = signature
@@ -105,6 +125,48 @@ def _metrics(items: list[tuple[str, int, str]]) -> None:
 # ---------------------------------------------------------------------------------------------- app
 
 
+REPO_URL = "https://github.com/sjapanjots/HR_Attendance_System-"
+_GITHUB_ICON = (
+    '<svg viewBox="0 0 16 16" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 '
+    "2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53"
+    ".63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12"
+    " 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07"
+    '-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>'
+)
+# A monoline script "h" (for HR) drawn for this app; it overlaps the top edge of the footer panel.
+_SCRIPT_GLYPH = (
+    '<svg class="footer-glyph" viewBox="-20 -30 460 680" fill="none" stroke="currentColor" stroke-width="34" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M40 330 C 120 250, 250 120, 260 60 C 270 0, 190 -5, 165 70 C 140 145, 110 380, 85 600"/>'
+    '<path d="M100 470 C 140 380, 230 330, 280 345 C 330 360, 310 430, 295 500 C 280 570, 300 610, 345 595 C 375 585, 395 560, 405 540"/>'
+    "</svg>"
+)
+_FOOTER_LINKS = [
+    [("How it works", f"{REPO_URL}#how-a-day-is-classified"), ("Thresholds", f"{REPO_URL}#thresholds-worked-time-hmm"), ("Workflow", f"{REPO_URL}#workflow")],
+    [("Source code", REPO_URL), ("Report an issue", f"{REPO_URL}/issues"), ("Deploy guide", f"{REPO_URL}#deploy-on-streamlit-community-cloud")],
+    [("Streamlit", "https://streamlit.io"), ("Polars", "https://pola.rs"), ("Data &amp; privacy", f"{REPO_URL}#deploy-on-streamlit-community-cloud")],
+]
+FOOTER = (
+    '<footer class="site-footer"><div class="footer-panel">'
+    + _SCRIPT_GLYPH
+    + '<div class="footer-top"><p class="footer-eyebrow">Every employee. Every day. One click.</p>'
+    '<p class="footer-headline">Attendance, sorted.</p></div>'
+    '<div class="footer-bottom"><nav class="footer-links">'
+    + "".join(
+        "<ul>" + "".join(f'<li><a href="{url}" target="_blank" rel="noopener">{text}</a></li>' for text, url in column) + "</ul>"
+        for column in _FOOTER_LINKS
+    )
+    + "</nav>"
+    f'<div class="footer-social"><a href="{REPO_URL}" target="_blank" rel="noopener" aria-label="GitHub repository">{_GITHUB_ICON}</a></div>'
+    '<p class="footer-legal"><span>&copy; 2026 Japanjot Singh</span>'
+    f'<a href="{REPO_URL}/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>'
+    f'<a href="{REPO_URL}#deploy-on-streamlit-community-cloud" target="_blank" rel="noopener">Privacy</a></p>'
+    "</div></div></footer>"
+)
+
+
+
+
 def main() -> None:
     st.set_page_config(page_title="Attendance Marking", page_icon="🗓️", layout="wide")
     _html(f"<style>{STYLE}</style>")
@@ -120,6 +182,7 @@ def main() -> None:
     finally:
         with stepper:
             _html(_stepper(progress["reached"]))
+        _html(FOOTER)
 
 
 def _run(progress: dict[str, int]) -> None:
@@ -309,10 +372,20 @@ def _run(progress: dict[str, int]) -> None:
             "For review": result.filter(pl.col("action") == ACTION_REVIEW),
             "All": result,
         }
+        detail_options = [h for i, h in enumerate(headers, start=1) if i not in block_cols and i != shift_col]
+        details = st.multiselect(
+            "Employee details to show",
+            detail_options,
+            key="detail_cols",
+            placeholder="e.g. B: Emp Code, C: Employee Name",
+            help="Display only: these columns are shown next to each row in the table below. The output workbook always keeps every column.",
+        )
         view = st.segmented_control("Show", list(views), default="Will change", label_visibility="collapsed") or "Will change"
+        detail_frame, detail_names = _employee_details(sheet, [headers.index(h) + 1 for h in details])
         st.dataframe(
-            views[view].select(
+            views[view].join(detail_frame, on="excel_row", how="left", maintain_order="left").select(
                 pl.col("excel_row").alias("Row"),
+                *[pl.col(name) for name in detail_names],
                 pl.col("day_label").alias("Day"),
                 pl.col("cell").alias("Cell"),
                 pl.col("shift_raw").alias("Shift"),
