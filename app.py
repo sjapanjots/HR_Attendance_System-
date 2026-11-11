@@ -27,12 +27,13 @@ STYLE = (Path(__file__).parent / "assets" / "style.css").read_text(encoding="utf
 # ---------------------------------------------------------------------------------------------- data
 
 
-@st.cache_data(show_spinner=False, max_entries=4)
+# Short-lived cache: uploaded HR data should not stay in server memory longer than needed.
+@st.cache_data(show_spinner=False, max_entries=4, ttl=900)
 def _sheet_names(file_bytes: bytes) -> list[str]:
     return list(sheet_paths(file_bytes))
 
 
-@st.cache_data(show_spinner="Reading worksheet…", max_entries=4)
+@st.cache_data(show_spinner="Reading worksheet…", max_entries=4, ttl=900)
 def _read(file_bytes: bytes, sheet_name: str, header_row: int) -> SheetData:
     return read_sheet(file_bytes, sheet_name, header_row)
 
