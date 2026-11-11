@@ -133,12 +133,12 @@ _GITHUB_ICON = (
     " 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07"
     '-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>'
 )
-# A monoline script "h" (for HR) drawn for this app; it overlaps the top edge of the footer panel.
+# A monoline script "J" drawn for this app; it overlaps the top edge of the footer panel.
 _SCRIPT_GLYPH = (
-    '<svg class="footer-glyph" viewBox="-20 -30 460 680" fill="none" stroke="currentColor" stroke-width="34" '
+    '<svg class="footer-glyph" viewBox="-20 -30 470 690" fill="none" stroke="currentColor" stroke-width="34" '
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-    '<path d="M40 330 C 120 250, 250 120, 260 60 C 270 0, 190 -5, 165 70 C 140 145, 110 380, 85 600"/>'
-    '<path d="M100 470 C 140 380, 230 330, 280 345 C 330 360, 310 430, 295 500 C 280 570, 300 610, 345 595 C 375 585, 395 560, 405 540"/>'
+    '<path d="M60 230 C 40 110, 160 10, 300 10 C 400 10, 440 70, 420 110 M 330 30 C 310 150, 300 330, 285 470 '
+    'C 270 590, 190 640, 115 620 C 50 602, 40 535, 100 505 C 170 470, 300 455, 420 450"/>'
     "</svg>"
 )
 _FOOTER_LINKS = [
@@ -171,9 +171,9 @@ def main() -> None:
     st.set_page_config(page_title="Attendance Marking", page_icon="🗓️", layout="wide")
     _html(f"<style>{STYLE}</style>")
     _html(
-        '<div class="hero"><div class="eyebrow">HR Attendance</div><h1>Monthly attendance marking</h1>'
-        "<p>Mark every employee-day of the month from punch-in and punch-out times. Only the attendance cells you map are "
-        "written, into a separate copy of your workbook.</p></div>"
+        '<div class="hero"><p class="eyebrow">HR Attendance</p><div class="hero-title">Monthly attendance marking</div>'
+        '<p class="hero-sub">Mark every employee-day of the month from punch-in and punch-out times. Only the attendance '
+        "cells you map are written, into a separate copy of your workbook.</p></div>"
     )
     stepper = st.empty()
     progress = {"reached": 0}

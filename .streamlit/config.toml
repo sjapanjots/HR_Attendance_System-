@@ -7,13 +7,13 @@ gatherUsageStats = false
 
 [theme]
 base = "light"
-primaryColor = "#18181B"
-backgroundColor = "#FAFAFA"
-secondaryBackgroundColor = "#F4F4F5"
-textColor = "#18181B"
-borderColor = "#E4E4E7"
+primaryColor = "#4B6BF2"
+backgroundColor = "#FBFBF8"
+secondaryBackgroundColor = "#F2F2EE"
+textColor = "#0A0A0A"
+borderColor = "#E4E3DD"
 showWidgetBorder = true
-baseRadius = "8px"
+baseRadius = "12px"
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap, sans-serif"
 
 [server]
